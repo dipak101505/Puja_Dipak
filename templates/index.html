@@ -1,0 +1,48 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>8-Puzzle Solver</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>8-Puzzle Solver</h1>
+      <button id="themeToggle" class="theme-toggle">🌙</button>
+    </div>
+
+    <!-- File Upload -->
+    <div class="upload-section">
+      <label for="imageUpload">Upload an image to generate 8-Puzzle:</label><br />
+      <input type="file" id="imageUpload" accept="image/*" />
+      <button id="btnUpload">Upload &amp; Generate</button>
+    </div>
+
+    <!-- Algorithm Selection -->
+    <div class="algorithm-section">
+      <label for="algorithmSelect">Choose solver:</label>
+      <select id="algorithmSelect">
+        <option value="astar" selected>A* (Manhattan)</option>
+        <option value="bfs">BFS</option>
+        <option value="dfs">DFS (depth limit 50)</option>
+      </select>
+    </div>
+
+    <!-- Puzzle Grid -->
+    <div id="puzzleContainer" class="puzzle-grid"></div>
+
+    <!-- Controls: Shuffle, Solve -->
+    <div class="controls">
+      <button id="btnShuffle" disabled>Shuffle</button>
+      <button id="btnSolve" disabled>Solve</button>
+    </div>
+
+    <!-- Solution Steps (will appear here) -->
+    <div id="solutionSteps"></div>
+  </div>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

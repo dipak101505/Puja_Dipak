@@ -1,0 +1,135 @@
+/* static/style.css */
+
+:root {
+  --bg-color: #f2f2f2;
+  --container-bg: #ffffff;
+  --text-color: #333333;
+  --button-bg: #007BFF;
+  --button-color: #ffffff;
+  --button-disabled: #cccccc;
+  --puzzle-border: #dddddd;
+  --puzzle-blank: #ffffff;
+}
+
+html[data-theme="dark"] {
+  --bg-color: #1a1a1a;
+  --container-bg: #2d2d2d;
+  --text-color: #ffffff;
+  --button-bg: #0d6efd;
+  --button-color: #ffffff;
+  --button-disabled: #666666;
+  --puzzle-border: #404040;
+  --puzzle-blank: #404040;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background-color: var(--bg-color);
+  margin: 0;
+  padding: 20px;
+  color: var(--text-color);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.container {
+  max-width: 500px;
+  margin: 0 auto;
+  background-color: var(--container-bg);
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  padding: 20px;
+  transition: background-color 0.3s ease;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.theme-toggle {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 50%;
+  transition: background-color 0.3s ease;
+  color: var(--text-color);
+}
+
+.theme-toggle:hover {
+  background-color: var(--puzzle-border);
+}
+
+h1 {
+  text-align: center;
+  margin: 0;
+  color: var(--text-color);
+}
+
+.upload-section, .algorithm-section, .controls {
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.puzzle-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 100px);
+  grid-template-rows: repeat(3, 100px);
+  gap: 2px;
+  margin: 0 auto 20px auto;
+  background-color: var(--puzzle-border);
+  padding: 2px;
+  border-radius: 4px;
+}
+
+.puzzle-tile {
+  width: 100px;
+  height: 100px;
+  cursor: pointer;
+  background-color: var(--container-bg);
+  transition: transform 0.2s ease;
+}
+
+.puzzle-tile:hover {
+  transform: scale(0.98);
+}
+
+.puzzle-tile.blank {
+  background-color: var(--puzzle-blank);
+  cursor: default;
+}
+
+button {
+  padding: 8px 16px;
+  margin: 0 5px;
+  font-size: 14px;
+  border: none;
+  border-radius: 4px;
+  background-color: var(--button-bg);
+  color: var(--button-color);
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+button:disabled {
+  background-color: var(--button-disabled);
+  cursor: not-allowed;
+}
+
+#solutionSteps {
+  margin-top: 20px;
+  font-size: 14px;
+  white-space: pre-wrap;
+  padding: 10px;
+  background-color: var(--puzzle-border);
+  border-radius: 4px;
+  color: var(--text-color);
+}
+  
