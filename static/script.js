@@ -3,6 +3,8 @@ let currentState = [];       // Array of length 9, storing tile numbers 0–8
 let tileElements = [];       // DOM elements for each tile
 let tileImgUrls = [];        // URLs returned from the server
 let blankIndex = 8;          // Always treat index 8 as the initial blank
+let animationTimer = null;
+let isBusy = false;
 
 // On DOM load:
 document.addEventListener("DOMContentLoaded", () => {
@@ -36,32 +38,50 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Puzzle functionality
-  document.getElementById("btnUpload").addEventListener("click", uploadImage);
   document.getElementById("btnShuffle").addEventListener("click", shufflePuzzle);
   document.getElementById("btnSolve").addEventListener("click", solvePuzzle);
+  document.getElementById("btnStop").addEventListener("click", stopAnimation);
+  loadPresetPuzzle();
 });
 
-function uploadImage() {
-  const fileInput = document.getElementById("imageUpload");
-  if (!fileInput.files || fileInput.files.length === 0) {
-    alert("Please select an image first.");
-    return;
-  }
-  const file = fileInput.files[0];
-  const formData = new FormData();
-  formData.append("image", file);
+function setStatus(message, kind = "") {
+  const el = document.getElementById("status");
+  el.className = "status" + (kind ? ` ${kind}` : "");
+  el.textContent = message || "";
+}
 
-  fetch("/upload", { method: "POST", body: formData })
-    .then(res => res.json())
+function setBusy(busy, message = "") {
+  isBusy = busy;
+  document.getElementById("btnSolve").classList.toggle("is-loading", busy);
+  document.getElementById("btnShuffle").disabled = busy || tileImgUrls.length === 0;
+  document.getElementById("btnSolve").disabled = busy || tileImgUrls.length === 0;
+  document.getElementById("btnStop").disabled = !busy;
+  if (message) setStatus(message, "warn");
+}
+
+function loadPresetPuzzle() {
+  stopAnimation();
+  setBusy(true, "Loading preset puzzle…");
+  fetch("/tiles")
+    .then(async (res) => {
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(text || `Load failed (${res.status})`);
+      }
+      return res.json();
+    })
     .then(data => {
       tileImgUrls = data.tiles; // array of 9 URLs
       initializePuzzle(tileImgUrls);
-      document.getElementById("btnShuffle").disabled = false;
-      document.getElementById("btnSolve").disabled = false;
+      setStatus("Try Shuffle, then Solve.", "ok");
     })
     .catch(err => {
       console.error(err);
-      alert("Failed to upload/process image.");
+      setStatus("Failed to load preset puzzle.", "err");
+      document.getElementById("solutionSteps").innerText = "Could not load SD.jpg.";
+    })
+    .finally(() => {
+      setBusy(false);
     });
 }
 
@@ -84,15 +104,17 @@ function initializePuzzle(urls) {
       const img = document.createElement("img");
       // Use the correct URL for each position
       img.src = urls[i];
-      img.width = 100;
-      img.height = 100;
+      img.alt = `Tile ${i + 1}`;
+      img.loading = "eager";
       tileDiv.appendChild(img);
     }
     tileDiv.addEventListener("click", () => tileClick(i));
     container.appendChild(tileDiv);
     tileElements.push(tileDiv);
   }
-  document.getElementById("solutionSteps").innerText = "";
+  document.getElementById("solutionSteps").innerText = "Ready.";
+  document.getElementById("btnShuffle").disabled = false;
+  document.getElementById("btnSolve").disabled = false;
 }
 
 function tileClick(idx) {
@@ -134,13 +156,16 @@ function moveTile(fromIdx, toIdx) {
 }
 
 function shufflePuzzle() {
+  if (isBusy) return;
+  stopAnimation();
   // Perform a random valid shuffle by making, say, 100 random moves from the solved state.
   for (let i = 0; i < 100; i++) {
     const neighbors = getNeighborIndices(blankIndex);
     const randIdx = neighbors[Math.floor(Math.random() * neighbors.length)];
     moveTile(randIdx, blankIndex);
   }
-  document.getElementById("solutionSteps").innerText = "";
+  document.getElementById("solutionSteps").innerText = "Shuffled. Click Solve when ready.";
+  setStatus("Shuffled.", "ok");
 }
 
 function getNeighborIndices(zIdx) {
@@ -154,42 +179,57 @@ function getNeighborIndices(zIdx) {
 }
 
 function solvePuzzle() {
+  if (isBusy) return;
+  stopAnimation();
   // Send currentState array to server
   const algo = document.getElementById("algorithmSelect").value;
+  setBusy(true, "Solving…");
   fetch("/solve", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ state: currentState, algorithm: algo })
   })
-    .then(res => res.json())
+    .then(async (res) => {
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(text || `Solve failed (${res.status})`);
+      }
+      return res.json();
+    })
     .then(data => {
       if (data.error) {
         document.getElementById("solutionSteps").innerText = "Error: " + data.error;
+        setStatus(data.error, "warn");
       } else {
         animateSolution(data.moves);
+        setStatus(`Found solution in ${data.moves.length} moves.`, "ok");
       }
     })
     .catch(err => {
       console.error(err);
-      alert("Error solving puzzle.");
+      setStatus("Solve failed. Try shuffling again or switching algorithm.", "err");
+    })
+    .finally(() => {
+      // Keep busy true while animating; animateSolution will clear it.
     });
 }
 
 function animateSolution(moves) {
   // Display the move list and animate one step every 500 ms
   const infoDiv = document.getElementById("solutionSteps");
-  infoDiv.innerText = "Solution: " + moves.join(", ") + "\nAnimating...";
+  const speed = Number(document.getElementById("speedSelect").value || 500);
+  infoDiv.innerText = `Moves (${moves.length}): ${moves.join(", ")}\n\nAnimating…`;
   let step = 0;
-  const interval = setInterval(() => {
+  animationTimer = setInterval(() => {
     if (step >= moves.length) {
-      clearInterval(interval);
+      stopAnimation(false);
       infoDiv.innerText += "\nDone!";
       return;
     }
     const action = moves[step];
     performMove(action);
     step++;
-  }, 500);
+  }, speed);
 }
 
 function performMove(action) {
@@ -208,4 +248,19 @@ function performMove(action) {
   if (targetIdx !== null) {
     moveTile(targetIdx, blankIndex);
   }
-} 
+}
+
+function stopAnimation(showMessage = true) {
+  if (animationTimer) {
+    clearInterval(animationTimer);
+    animationTimer = null;
+  }
+  if (isBusy) {
+    isBusy = false;
+    document.getElementById("btnSolve").classList.remove("is-loading");
+    document.getElementById("btnShuffle").disabled = tileImgUrls.length === 0;
+    document.getElementById("btnSolve").disabled = tileImgUrls.length === 0;
+    document.getElementById("btnStop").disabled = true;
+  }
+  if (showMessage) setStatus("Stopped.", "warn");
+}

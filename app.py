@@ -1,24 +1,20 @@
 # app.py
 
 import os
-from flask import Flask, render_template, request, redirect, url_for, jsonify
-from werkzeug.utils import secure_filename
+from flask import Flask, render_template, url_for, jsonify, request
 from PIL import Image
 import cv2
-import numpy as np
 from solver import astar, bfs, dfs
 
 UPLOAD_FOLDER = "static/uploads"
-ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "bmp"}
+PRESET_IMAGE_NAME = "SD.jpg"
+PRESET_IMAGE_PATH = os.path.join(UPLOAD_FOLDER, PRESET_IMAGE_NAME)
 
 app = Flask(__name__)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
-
-def allowed_file(filename):
-    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def slice_image_to_tiles(image_path):
     """
@@ -50,34 +46,21 @@ def slice_image_to_tiles(image_path):
 def index():
     return render_template("index.html")
 
-@app.route("/upload", methods=["POST"])
-def upload():
-    """
-    Handle image upload. Save the file, slice into 9 tiles, save those tiles
-    into static/uploads/tiles_<timestamp>_<i>.png, and return JSON with tile URLs.
-    The front end will load these 9 tile images in a 3×3 grid and treat the last tile as blank.
-    """
-    if "image" not in request.files:
-        return redirect(request.url)
-    file = request.files["image"]
-    if file.filename == "" or not allowed_file(file.filename):
-        return redirect(request.url)
+@app.route("/tiles", methods=["GET"])
+def tiles():
+    """Slice the preset SD.jpg image and return tile URLs."""
+    if not os.path.exists(PRESET_IMAGE_PATH):
+        return jsonify({"error": f"Preset image not found: {PRESET_IMAGE_NAME}"}), 500
 
-    filename = secure_filename(file.filename)
-    filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-    file.save(filepath)
-
-    # Slice into tiles
     try:
-        tiles = slice_image_to_tiles(filepath)
+        tiles = slice_image_to_tiles(PRESET_IMAGE_PATH)
     except ValueError:
-        return "Invalid image.", 400
+        return jsonify({"error": "Preset image is invalid."}), 500
 
-    # Save each tile into UPLOAD_FOLDER/tiles_<base>_<i>.png
-    base, _ = os.path.splitext(filename)
+    # Save each tile into UPLOAD_FOLDER/sd_tile_<i>.png
     tile_urls = []
     for i, tile in enumerate(tiles):
-        tile_filename = f"{base}_tile_{i}.png"
+        tile_filename = f"sd_tile_{i}.png"
         tile_path = os.path.join(app.config["UPLOAD_FOLDER"], tile_filename)
         tile.save(tile_path)
         tile_urls.append(url_for("static", filename=f"uploads/{tile_filename}"))

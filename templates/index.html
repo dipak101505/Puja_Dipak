@@ -3,44 +3,70 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>8-Puzzle Solver</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dipak loves Puja</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
 </head>
 <body>
-  <div class="container">
-    <div class="header">
-      <h1>8-Puzzle Solver</h1>
-      <button id="themeToggle" class="theme-toggle">🌙</button>
-    </div>
+  <div class="page">
+    <header class="topbar">
+      <div class="brand">
+        <h1 class="title">Love you Puja!</h1>
+      </div>
+      <button id="themeToggle" class="theme-toggle" type="button" aria-label="Toggle theme">🌙</button>
+    </header>
 
-    <!-- File Upload -->
-    <div class="upload-section">
-      <label for="imageUpload">Upload an image to generate 8-Puzzle:</label><br />
-      <input type="file" id="imageUpload" accept="image/*" />
-      <button id="btnUpload">Upload &amp; Generate</button>
-    </div>
+    <main class="container">
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">Puzzled may we get but we will solve it together</h2>
+          <!-- <div class="hint">Preset source: static/uploads/SD.jpg</div> -->
+        </div>
+        <div class="meta-row">
+          <div id="status" class="status" role="status" aria-live="polite"></div>
+        </div>
 
-    <!-- Algorithm Selection -->
-    <div class="algorithm-section">
-      <label for="algorithmSelect">Choose solver:</label>
-      <select id="algorithmSelect">
-        <option value="astar" selected>A* (Manhattan)</option>
-        <option value="bfs">BFS</option>
-        <option value="dfs">DFS (depth limit 50)</option>
-      </select>
-    </div>
+        <div class="controls-row">
+          <!-- <label class="field">
+            <span class="field-label">Algorithm</span>
+            <select id="algorithmSelect" class="select">
+              <option value="astar" selected>A* (Manhattan)</option>
+              <option value="bfs">BFS</option>
+              <option value="dfs">DFS (depth limit 50)</option>
+            </select>
+          </label> -->
 
-    <!-- Puzzle Grid -->
-    <div id="puzzleContainer" class="puzzle-grid"></div>
+          <label class="field">
+            <span class="field-label">Animation speed</span>
+            <select id="speedSelect" class="select" aria-label="Animation speed">
+              <option value="900">Slow</option>
+              <option value="500" selected>Normal</option>
+              <option value="250">Fast</option>
+            </select>
+          </label>
 
-    <!-- Controls: Shuffle, Solve -->
-    <div class="controls">
-      <button id="btnShuffle" disabled>Shuffle</button>
-      <button id="btnSolve" disabled>Solve</button>
-    </div>
+          <div class="buttons">
+            <button id="btnShuffle" class="btn" type="button" disabled>Shuffle</button>
+            <button id="btnSolve" class="btn btn-primary" type="button" disabled>
+              <span class="btn-text">Solve</span>
+              <span class="spinner" aria-hidden="true"></span>
+            </button>
+          </div>
+        </div>
 
-    <!-- Solution Steps (will appear here) -->
-    <div id="solutionSteps"></div>
+        <div class="puzzle-wrap">
+          <div id="puzzleContainer" class="puzzle-grid" aria-label="8 puzzle grid"></div>
+        </div>
+
+        <div class="solution">
+          <div class="solution-header">
+            <h3 class="solution-title">Solution</h3>
+            <button id="btnStop" class="btn btn-ghost" type="button" disabled>Stop</button>
+          </div>
+          <div id="solutionSteps" class="solution-body">Loading preset puzzle…</div>
+        </div>
+      </section>
+    </main>
   </div>
 
   <script src="{{ url_for('static', filename='script.js') }}"></script>
