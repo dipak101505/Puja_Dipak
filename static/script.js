@@ -182,7 +182,7 @@ function solvePuzzle() {
   if (isBusy) return;
   stopAnimation();
   // Send currentState array to server
-  const algo = document.getElementById("algorithmSelect").value;
+  const algo = document.getElementById("algorithmSelect")?.value || "astar";
   setBusy(true, "Solving…");
   fetch("/solve", {
     method: "POST",

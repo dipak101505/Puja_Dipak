@@ -53,6 +53,7 @@ static/uploads/*.png
 static/uploads/*.jpg
 static/uploads/*.jpeg
 static/uploads/*.bmp
+!static/uploads/SD.jpg
 
 # Logs
 *.log
