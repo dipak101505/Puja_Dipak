@@ -1,20 +1,43 @@
 # app.py
 
 import os
+from urllib.request import urlopen
 from flask import Flask, render_template, url_for, jsonify, request
 from PIL import Image
 import cv2
 from solver import astar, bfs, dfs
 
-UPLOAD_FOLDER = "static/uploads"
-PRESET_IMAGE_NAME = "SD.jpg"
-PRESET_IMAGE_PATH = os.path.join(UPLOAD_FOLDER, PRESET_IMAGE_NAME)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+UPLOAD_FOLDER = os.path.join(BASE_DIR, "static", "uploads")
+PRESET_IMAGE_URL = "https://firebasestorage.googleapis.com/v0/b/cloud-profiler-demo-399610.appspot.com/o/PartnerImage%2FS%26D.jpg?alt=media&token=29b51357-e884-4ccb-badf-dab8f16ef915"
+PRESET_CACHE_NAME = "preset_source.jpg"
 
 app = Flask(__name__)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
+
+
+def resolve_preset_image_path():
+    """Download preset image from URL and return local cache path."""
+    cache_path = os.path.join(UPLOAD_FOLDER, PRESET_CACHE_NAME)
+
+    # Reuse cache if already downloaded in this runtime.
+    if os.path.exists(cache_path):
+        return cache_path
+
+    if not PRESET_IMAGE_URL:
+        return None
+
+    try:
+        with urlopen(PRESET_IMAGE_URL, timeout=20) as response:
+            data = response.read()
+        with open(cache_path, "wb") as outfile:
+            outfile.write(data)
+        return cache_path
+    except Exception:
+        return None
 
 def slice_image_to_tiles(image_path):
     """
@@ -48,12 +71,13 @@ def index():
 
 @app.route("/tiles", methods=["GET"])
 def tiles():
-    """Slice the preset SD.jpg image and return tile URLs."""
-    if not os.path.exists(PRESET_IMAGE_PATH):
-        return jsonify({"error": f"Preset image not found: {PRESET_IMAGE_NAME}"}), 500
+    """Slice the preset Firebase image and return tile URLs."""
+    preset_image_path = resolve_preset_image_path()
+    if preset_image_path is None:
+        return jsonify({"error": "Preset image could not be downloaded from Firebase Storage."}), 500
 
     try:
-        tiles = slice_image_to_tiles(PRESET_IMAGE_PATH)
+        tiles = slice_image_to_tiles(preset_image_path)
     except ValueError:
         return jsonify({"error": "Preset image is invalid."}), 500
 
